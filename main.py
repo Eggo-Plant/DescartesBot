@@ -6,10 +6,12 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import os
 import requests
+from bs4 import BeautifulSoup
 import sqlite3
 import math
 import random
 import pathlib
+
 
 path = pathlib.PurePath()
 intents = discord.Intents.default()
@@ -111,16 +113,40 @@ async def coinflip(message):
 async def mcw(ctx, *, message: str):
     search_term = message.replace(' ', '_')
     adjusted_search = search_term.lower()
-    wiki_link = (f"https://minecraft.fandom.com/wiki/{adjusted_search}")
-    await ctx.send(wiki_link)
+    wiki_link = (f"https://minecraft.fandom.com/wiki/Special:Search?search={adjusted_search}")
+    r = requests.get(wiki_link)
+    soup = BeautifulSoup(r.text, 'html.parser')
+    results = str(soup.find('i'))
+    if "No results found" in results:
+        await ctx.send(f"Sorry! No articles found for `{message}`.")
+    else:
+        try:
+            results = soup.find('a', attrs={'class':'unified-search__result__title'})['href']
+            wiki_message = (f'''I couldn't find a page for `{message}`. Did you mean this?\n{results}''')
+            await ctx.send(wiki_message)
+        except TypeError:
+            wiki_link = (f"https://minecraft.fandom.com/wiki/{adjusted_search}")
+            await ctx.send(wiki_link)
 
 
 @bot.command(name="tw", alias=["terrariawiki"], help="Provide a search term for the Terraria wiki (e.x. 'tw blood moon').")
 async def mcw(ctx, *, message: str):
     search_term = message.replace(' ', '_')
-    adjusted_search = search_term.title()
-    wiki_link = (f"https://terraria.fandom.com/wiki/{adjusted_search}")
-    await ctx.send(wiki_link)
+    adjusted_search = search_term.lower()
+    wiki_link = (f"https://terraria.fandom.com/wiki/Special:Search?search={adjusted_search}")
+    r = requests.get(wiki_link)
+    soup = BeautifulSoup(r.text, 'html.parser')
+    results = str(soup.find('i'))
+    if "No results found" in results:
+        await ctx.send(f"Sorry! No articles found for `{message}`.")
+    else:
+        try:
+            results = soup.find('a', attrs={'class':'unified-search__result__title'})['href']
+            wiki_message = (f'''I couldn't find a page for `{message}`. Did you mean this?\n{results}''')
+            await ctx.send(wiki_message)
+        except TypeError:
+            wiki_link = (f"https://terraria.fandom.com/wiki/{adjusted_search}")
+            await ctx.send(wiki_link)
 
 
 @bot.command(name="prefix", alias=["setprefix"], help="Use this to change my prefix (admins only)")
