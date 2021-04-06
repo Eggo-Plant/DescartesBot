@@ -24,7 +24,7 @@ def prefixgetter(bot, message):
     cur.execute('''CREATE TABLE IF NOT EXISTS prefixes
                    (serverid INTEGER, prefix TEXT)''')
     cur.execute(f'''SELECT prefix FROM prefixes WHERE serverid = {sid}''')
-    default_prefix = "-"
+    default_prefix = "-" # DEFAULT PREFIX IS SET HERE
     custom_prefix = cur.fetchone()
     prefixes.close()
     if custom_prefix:
@@ -34,7 +34,7 @@ def prefixgetter(bot, message):
 
 
 # Declare bot prefix:
-bot = commands.Bot(command_prefix=prefixgetter, description='A basic bot by Eggo-Plant', intents=intents,
+bot = commands.Bot(command_prefix=prefixgetter, description='DescartesBot by Eggo-Plant#7376', intents=intents,
                    case_insensitive=True)
 
 
