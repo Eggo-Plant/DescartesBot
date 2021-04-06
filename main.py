@@ -24,7 +24,7 @@ def prefixgetter(bot, message):
     cur.execute('''CREATE TABLE IF NOT EXISTS prefixes
                    (serverid INTEGER, prefix TEXT)''')
     cur.execute(f'''SELECT prefix FROM prefixes WHERE serverid = {sid}''')
-    default_prefix = "-" # DEFAULT PREFIX IS SET HERE
+    default_prefix = "-"
     custom_prefix = cur.fetchone()
     prefixes.close()
     if custom_prefix:
@@ -34,7 +34,7 @@ def prefixgetter(bot, message):
 
 
 # Declare bot prefix:
-bot = commands.Bot(command_prefix=prefixgetter, description='DescartesBot by Eggo-Plant#7376', intents=intents,
+bot = commands.Bot(command_prefix=prefixgetter, description='A basic bot by Eggo-Plant', intents=intents,
                    case_insensitive=True)
 
 
@@ -84,24 +84,6 @@ async def on_message(ctx):
     await bot.process_commands(ctx)
 
 
-# ---------- DEFINING FUNCTIONS ---------- #
-
-# Define quote grabber and printer
-async def get_quote():
-    response = requests.get('https://api.quotable.io/random?tags=wisdom').json()
-    print(
-        bcolors.OKCYAN + "[INFO]: " + bcolors.ENDC + "Printed quote from " + bcolors.OKGREEN + bcolors.BOLD + response[
-            'author'] + bcolors.ENDC)
-    quote = f'''"{response['content']}" -{response['author']}'''
-    return quote
-
-
-# Coinflip function
-async def flip_a_coin():
-    coin = random.choice(["Heads", "Tails"])
-    return coin
-
-
 # ---------- DISCORD BOT COMMANDS ---------- #
 
 @bot.command(name="ping", aliases=["latency"], help="Displays the bot's message latency.")
@@ -113,14 +95,15 @@ async def ping(message):
 @bot.command(name="quote", aliases=["quotes"], help="Displays a random proverb.")
 @commands.cooldown(1, 3)
 async def quote(message):
-    quote = await get_quote()
+    response = requests.get('https://api.quotable.io/random?tags=wisdom').json()
+    quote = (f'''"{response['content']}" -{response['author']}''')
     await message.channel.send(quote)
 
 
 @bot.command(name="coinflip", aliases=["cf"], help="Flips a coin.")
 @commands.cooldown(1, 2)
 async def coinflip(message):
-    coin = await flip_a_coin()
+    coin = random.choice(["Heads", "Tails"])
     await message.channel.send(f':coin: You got **{coin}**!')
 
 
