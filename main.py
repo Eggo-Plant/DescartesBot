@@ -132,7 +132,7 @@ async def mcw(ctx, *, message: str):
 @bot.command(name="tw", alias=["terrariawiki"], help="Provide a search term for the Terraria wiki (e.x. 'tw blood moon').")
 async def mcw(ctx, *, message: str):
     search_term = message.replace(' ', '_')
-    adjusted_search = search_term.lower()
+    adjusted_search = search_term.title()
     wiki_link = (f"https://terraria.fandom.com/wiki/Special:Search?search={adjusted_search}")
     r = requests.get(wiki_link)
     soup = BeautifulSoup(r.text, 'html.parser')
