@@ -8,6 +8,6 @@ A basic python discord bot
 - create a file called `.env` in the folder where you placed them.
 - put `TOKEN=YOUR BOT TOKEN HERE` as the first line, and save it.
 - Install all the requirements with `pip install -r requirements.txt`
-- That's it! Just run main.py with any python verison 3.
+- That's it! Just run main.py with any python verison >= 3.6
 
 I probably won't post an invite link publicly, it's just a personal project.
