@@ -116,20 +116,18 @@ async def quote(message):
     await message.channel.send(quote)
 
 
-@bot.command(name="mcsrv", aliases=["mcstatus"], help="Supply a minecraft server address to query.")
+@bot.command(name="mcsrv", aliases=["mcstatus"], help="Supply a minecraft server address to query")
 @commands.cooldown(1, 5)
 async def mcsrv(ctx, *, message: str):
     response = requests.get(f'https://api.mcsrvstat.us/2/{message}').json()
-    print(response)
     online: bool = response['debug']['ping']
-    print(online)
     if online:
         n = '\n' # I have to do this because you can't put \n inside of f strings
-        query = (f":green_circle: **Server is online!**{n}> **Server Address:** {response['ip']}{n}> **Server Port:** {response['port']}{n}> **Players Online:** {response['players']['online']}{n}> **Server Version:** {response['version']}")
-        print(query)
-        await ctx.channel.send(query)
+        embed=discord.Embed(title="<:fullbars:829457395213140029> Server is Online!", description=f"**Server Address:** {response['ip']}{n} **Server Port:** {response['port']}{n} **Players Online:** {response['players']['online']}{n} **Server Version:** {response['version']}", color=0x00FF21)
+        await ctx.channel.send(embed=embed)
     else:
-        await ctx.channel.send(f'Sorry, either the server is offline, or the address is invalid')
+        embed=discord.Embed(title="<:nobars:829458356141424672> Server is Offline!", description="Sorry! Either the server is offline, or the address supplied is incorrect.", color=0xff0000)
+        await ctx.channel.send(embed=embed)
 
 
 @bot.command(name="coinflip", aliases=["cf"], help="Flips a coin.")
