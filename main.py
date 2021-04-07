@@ -6,12 +6,10 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import os
 import requests
-from bs4 import BeautifulSoup
 import sqlite3
 import math
 import random
 import pathlib
-
 
 path = pathlib.PurePath()
 intents = discord.Intents.default()
@@ -54,6 +52,14 @@ class bcolors:
     ITALIC = '\033[3m'
 
 
+# ----------- ERROR HANDLING ---------- #
+
+@bot.event # Sends a message notifying the user if a command is on cooldown.
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.send("This command is on cooldown, please retry in {}s.".format(math.ceil(error.retry_after)))
+
+
 # ----------- INITIALIZE BOT ---------- #
 
 # Commands to be run on boot:
@@ -86,6 +92,14 @@ async def on_message(ctx):
     await bot.process_commands(ctx)
 
 
+# ---------- DEFINING FUNCTIONS ---------- #
+
+# Coinflip function
+async def flip_a_coin():
+    coin = random.choice(["Heads", "Tails"])
+    return coin
+
+
 # ---------- DISCORD BOT COMMANDS ---------- #
 
 @bot.command(name="ping", aliases=["latency"], help="Displays the bot's message latency.")
@@ -102,10 +116,26 @@ async def quote(message):
     await message.channel.send(quote)
 
 
+@bot.command(name="mcsrv", aliases=["mcstatus"], help="Supply a minecraft server address to query.")
+@commands.cooldown(1, 5)
+async def mcsrv(ctx, *, message: str):
+    response = requests.get(f'https://api.mcsrvstat.us/2/{message}').json()
+    print(response)
+    online: bool = response['debug']['ping']
+    print(online)
+    if online:
+        n = '\n' # I have to do this because you can't put \n inside of f strings
+        query = (f":green_circle: **Server is online!**{n}> **Server Address:** {response['ip']}{n}> **Server Port:** {response['port']}{n}> **Players Online:** {response['players']['online']}{n}> **Server Version:** {response['version']}")
+        print(query)
+        await ctx.channel.send(query)
+    else:
+        await ctx.channel.send(f'Sorry, either the server is offline, or the address is invalid')
+
+
 @bot.command(name="coinflip", aliases=["cf"], help="Flips a coin.")
 @commands.cooldown(1, 2)
 async def coinflip(message):
-    coin = random.choice(["Heads", "Tails"])
+    coin = await flip_a_coin()
     await message.channel.send(f':coin: You got **{coin}**!')
 
 
@@ -113,40 +143,16 @@ async def coinflip(message):
 async def mcw(ctx, *, message: str):
     search_term = message.replace(' ', '_')
     adjusted_search = search_term.lower()
-    wiki_link = (f"https://minecraft.fandom.com/wiki/Special:Search?search={adjusted_search}")
-    r = requests.get(wiki_link)
-    soup = BeautifulSoup(r.text, 'html.parser')
-    results = str(soup.find('i'))
-    if "No results found" in results:
-        await ctx.send(f"Sorry! No articles found for `{message}`.")
-    else:
-        try:
-            results = soup.find('a', attrs={'class':'unified-search__result__title'})['href']
-            wiki_message = (f'''I couldn't find a page for `{message}`. Did you mean this?\n{results}''')
-            await ctx.send(wiki_message)
-        except TypeError:
-            wiki_link = (f"https://minecraft.fandom.com/wiki/{adjusted_search}")
-            await ctx.send(wiki_link)
+    wiki_link = (f"https://minecraft.fandom.com/wiki/{adjusted_search}")
+    await ctx.send(wiki_link)
 
 
 @bot.command(name="tw", alias=["terrariawiki"], help="Provide a search term for the Terraria wiki (e.x. 'tw blood moon').")
 async def mcw(ctx, *, message: str):
     search_term = message.replace(' ', '_')
     adjusted_search = search_term.title()
-    wiki_link = (f"https://terraria.fandom.com/wiki/Special:Search?search={adjusted_search}")
-    r = requests.get(wiki_link)
-    soup = BeautifulSoup(r.text, 'html.parser')
-    results = str(soup.find('i'))
-    if "No results found" in results:
-        await ctx.send(f"Sorry! No articles found for `{message}`.")
-    else:
-        try:
-            results = soup.find('a', attrs={'class':'unified-search__result__title'})['href']
-            wiki_message = (f'''I couldn't find a page for `{message}`. Did you mean this?\n{results}''')
-            await ctx.send(wiki_message)
-        except TypeError:
-            wiki_link = (f"https://terraria.fandom.com/wiki/{adjusted_search}")
-            await ctx.send(wiki_link)
+    wiki_link = (f"https://terraria.fandom.com/wiki/{adjusted_search}")
+    await ctx.send(wiki_link)
 
 
 @bot.command(name="prefix", alias=["setprefix"], help="Use this to change my prefix (admins only)")
