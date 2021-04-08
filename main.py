@@ -8,6 +8,7 @@ import os
 import requests
 import sqlite3
 import math
+from bs4 import BeautifulSoup
 import random
 import pathlib
 
@@ -92,14 +93,6 @@ async def on_message(ctx):
     await bot.process_commands(ctx)
 
 
-# ---------- DEFINING FUNCTIONS ---------- #
-
-# Coinflip function
-async def flip_a_coin():
-    coin = random.choice(["Heads", "Tails"])
-    return coin
-
-
 # ---------- DISCORD BOT COMMANDS ---------- #
 
 @bot.command(name="ping", aliases=["latency"], help="Displays the bot's message latency.")
@@ -108,8 +101,14 @@ async def ping(message):
     await message.channel.send(f':ping_pong: **Pong!** Response time is: {math.floor(bot.latency * 1000)}ms')
 
 
+@bot.command(name="echo", help="Does what you think it does.")
+@commands.cooldown(1, 2, commands.BucketType.user)
+async def echo(ctx, *, message: str):
+    await ctx.channel.send(message)
+
+
 @bot.command(name="quote", aliases=["quotes"], help="Displays a random proverb.")
-@commands.cooldown(1, 3)
+@commands.cooldown(1, 3, commands.BucketType.user)
 async def quote(message):
     response = requests.get('https://api.quotable.io/random?tags=wisdom').json()
     quote = (f'''"{response['content']}" -{response['author']}''')
@@ -117,23 +116,27 @@ async def quote(message):
 
 
 @bot.command(name="mcsrv", aliases=["mcstatus"], help="Supply a minecraft server address to query")
-@commands.cooldown(1, 5)
+@commands.cooldown(1, 5, commands.BucketType.user)
 async def mcsrv(ctx, *, message: str):
     response = requests.get(f'https://api.mcsrvstat.us/2/{message}').json()
     online: bool = response['debug']['ping']
+    n = '\n' # I have to do this because you can't put \n inside of f strings
     if online:
-        n = '\n' # I have to do this because you can't put \n inside of f strings
         embed=discord.Embed(title="<:fullbars:829457395213140029> Server is Online!", description=f"**Server Address:** {response['ip']}{n} **Server Port:** {response['port']}{n} **Players Online:** {response['players']['online']}{n} **Server Version:** {response['version']}", color=0x00FF21)
-        await ctx.channel.send(embed=embed)
+        embed.set_thumbnail(url=f'https://api.mcsrvstat.us/icon/{message}')
+        if (response['players']['online']) <= 9:
+            players_online = (response['players']['list'])
+            player_list = ', '.join(players_online)
+            embed.add_field(name="Who's Online?", value=player_list)
     else:
         embed=discord.Embed(title="<:nobars:829458356141424672> Server is Offline!", description="Sorry! Either the server is offline, or the address supplied is incorrect.", color=0xff0000)
-        await ctx.channel.send(embed=embed)
+    await ctx.channel.send(embed=embed)
 
 
 @bot.command(name="coinflip", aliases=["cf"], help="Flips a coin.")
 @commands.cooldown(1, 2)
 async def coinflip(message):
-    coin = await flip_a_coin()
+    coin = random.choice(["Heads", "Tails"])
     await message.channel.send(f':coin: You got **{coin}**!')
 
 
@@ -141,16 +144,41 @@ async def coinflip(message):
 async def mcw(ctx, *, message: str):
     search_term = message.replace(' ', '_')
     adjusted_search = search_term.lower()
-    wiki_link = (f"https://minecraft.fandom.com/wiki/{adjusted_search}")
-    await ctx.send(wiki_link)
+    wiki_link = (f"https://minecraft.fandom.com/wiki/Special:Search?search={adjusted_search}")
+    r = requests.get(wiki_link)
+    soup = BeautifulSoup(r.text, 'html.parser')
+    results = str(soup.find('i'))
+    if "No results found" in results:
+        await ctx.send(f"Sorry! No articles found for `{message}`.")
+    else:
+        try:
+            results = soup.find('a', attrs={'class':'unified-search__result__title'})['href']
+            wiki_message = (f'''I couldn't find a page for `{message}`. Did you mean this?\n{results}''')
+            await ctx.send(wiki_message)
+        except TypeError:
+            wiki_link = (f"https://minecraft.fandom.com/wiki/{adjusted_search}")
+            await ctx.send(wiki_link)
 
 
 @bot.command(name="tw", alias=["terrariawiki"], help="Provide a search term for the Terraria wiki (e.x. 'tw blood moon').")
 async def mcw(ctx, *, message: str):
     search_term = message.replace(' ', '_')
+    adjusted_search = search_term.lower()
     adjusted_search = search_term.title()
-    wiki_link = (f"https://terraria.fandom.com/wiki/{adjusted_search}")
-    await ctx.send(wiki_link)
+    wiki_link = (f"https://terraria.fandom.com/wiki/Special:Search?search={adjusted_search}")
+    r = requests.get(wiki_link)
+    soup = BeautifulSoup(r.text, 'html.parser')
+    results = str(soup.find('i'))
+    if "No results found" in results:
+        await ctx.send(f"Sorry! No articles found for `{message}`.")
+    else:
+        try:
+            results = soup.find('a', attrs={'class':'unified-search__result__title'})['href']
+            wiki_message = (f'''I couldn't find a page for `{message}`. Did you mean this?\n{results}''')
+            await ctx.send(wiki_message)
+        except TypeError:
+            wiki_link = (f"https://terraria.fandom.com/wiki/{adjusted_search}")
+            await ctx.send(wiki_link)
 
 
 @bot.command(name="prefix", alias=["setprefix"], help="Use this to change my prefix (admins only)")
