@@ -1,2 +1,5 @@
 # Ignore the .env from commits because it contains the bot's token
 .env
+
+# Ignore the data.db file
+data.db
